@@ -31,6 +31,7 @@
 #endif
 #include "rhoruby.h"
 #include "vm_core.h"
+#include "transcode_data.h"
 
 #ifdef ENABLE_RUBY_VM_STAT
 #include "../stat/stat.h"
@@ -82,6 +83,7 @@ extern void Init_Extensions(void);
 extern void init_rhoext_Signature();
 extern void Init_encdb(void);
 extern void ruby_init_prelude(void);
+extern void Init_transcode(void);
 
 
 //RhoSupport extension
@@ -119,14 +121,6 @@ static int extensions_loaded = 0;
 extern void rb_w32_sysinit(int *argc, char ***argv);
 #endif
 
-/*rb_thread_t * __getCurrentThread()
-{
-    rb_thread_t * res = ruby_thread_from_native();
-    if ( res )
-        return res;
-
-    return ruby_current_thread;
-}*/
 /*
 void RhoRubyThreadStart()
 {
@@ -158,26 +152,6 @@ void RhoRubyThreadStop()
     //native_mutex_destroy(&th->interrupt_lock);
 } */
 
-extern int native_mutex_lock(rb_nativethread_lock_t *);
-extern int native_mutex_unlock(rb_nativethread_lock_t *);
-
-rb_thread_t * g_th_stored = 0;
-void rho_ruby_start_threadidle()
-{
-//    g_th_stored = GET_THREAD();
-//    rb_gc_save_machine_context(g_th_stored);
-//    native_mutex_unlock(&g_th_stored->vm->gvl.lock);
-}
-
-void rho_ruby_stop_threadidle()
-{
-//    if ( g_th_stored )
-//    {
-//        native_mutex_lock(&g_th_stored->vm->gvl.lock);
-//        rb_thread_set_current(g_th_stored);
-//        g_th_stored = 0;
-//    }
-}
 
 #if !defined(OS_SYMBIAN) && (defined(RHO_SYMBIAN))// || defined (RHODES_EMULATOR))
 int   daylight;
@@ -185,6 +159,20 @@ char *tzname[2];
 #endif
 
 void RhoModifyRubyLoadPath( const char* );
+
+#if defined(OS_MACOSX) || defined(OS_ANDROID)
+
+void Init_trans_utf_16_32();
+void Init_trans_single_byte();
+
+void Init_transcoders() {
+    //TRANS_INIT(utf_16_32);
+    //TRANS_INIT(single_byte);
+    Init_trans_utf_16_32();
+    Init_trans_single_byte();
+}
+#endif
+
 
 void RhoRubyStart()
 {
@@ -209,6 +197,10 @@ void RhoRubyStart()
 
     ruby_init();
     Init_encdb();
+#if defined(OS_MACOSX) || defined(OS_ANDROID)
+    Init_transcode();
+    Init_transcoders();
+#endif
 
 #if defined(DEBUG)
     //enable_gc_profile();
@@ -1055,10 +1047,10 @@ VALUE rho_ruby_main_thread()
 VALUE rho_ruby_current_thread()
 {
     if (!rho_ruby_is_started())
-        return 0;
+        return Qnil;
 
     if ( ruby_native_thread_p() != 1 )
-        return 0;
+        return Qnil;
 
     return rb_thread_current();
 }

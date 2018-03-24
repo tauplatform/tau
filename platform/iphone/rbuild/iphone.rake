@@ -370,7 +370,7 @@ def update_plist_procedure
         end
 
 
-         set_app_icon(false)
+         set_app_icon()
          set_default_images(false, hash)
       end
 end
@@ -408,40 +408,7 @@ def set_signing_identity(identity,profile,entitlements,provisioning_style,develo
   File.open(fname,"w") { |f| f.write(buf) }
 end
 
-BAKUP_FILES = ['rhorunner.xcodeproj', 'Entitlements.plist', 'icon57.png', 'icon60.png', 'icon72.png', 'icon76.png', 'icon114.png', 'icon120.png', 'icon144.png', 'icon152.png', 'icon180.png', 'Info.plist', 'Default.png', 'Default@2x.png', 'Default-Portrait.png', 'Default-Portrait@2x.png', 'Default-PortraitUpsideDown.png', 'Default-PortraitUpsideDown@2x.png', 'Default-Landscape.png', 'Default-Landscape@2x.png', 'Default-LandscapeLeft.png', 'Default-LandscapeLeft@2x.png', 'Default-LandscapeRight.png', 'Default-LandscapeRight@2x.png', 'Default-568h@2x.png', 'Default-667h@2x.png', 'Default-736h@3x.png', 'Default-812h@3x.png']
-CLEAR_FILES = ['Default.png', 'Default@2x.png', 'Default-Portrait.png', 'Default-Portrait@2x.png', 'Default-PortraitUpsideDown.png', 'Default-PortraitUpsideDown@2x.png', 'Default-Landscape.png', 'Default-Landscape@2x.png', 'Default-LandscapeLeft.png', 'Default-LandscapeLeft@2x.png', 'Default-LandscapeRight.png', 'Default-LandscapeRight@2x.png', 'Default-568h@2x.png', 'Default-667h@2x.png', 'Default-736h@3x.png', 'Default-812h@3x.png']
 
-def make_project_bakup
-     BAKUP_FILES.each do |f|
-           filename_origin = $config["build"]["iphonepath"] + "/" +f
-           filename_bak = $config["build"]["iphonepath"] + "/project_bakup/" +f
-           is_folder = File.directory? filename_bak
-           if File.exists? filename_origin
-                if (!File.exists? filename_bak) && (!is_folder)
-                    bak_folder = $config["build"]["iphonepath"] + "/project_bakup"
-                    mkdir_p bak_folder
-                    cp_r filename_origin,filename_bak
-                end
-           end
-     end
-end
-
-def restore_project_from_bak
-    CLEAR_FILES.each do |f|
-        filename = $config["build"]["iphonepath"] + "/" +f
-        if File.exists? filename
-            rm_rf filename
-        end
-    end
-     BAKUP_FILES.each do |f|
-           filename_origin = $config["build"]["iphonepath"] + "/" +f
-           filename_bak = $config["build"]["iphonepath"] + "/project_bakup/" +f
-           if File.exists? filename_bak
-                   rm_rf filename_origin
-                   cp_r filename_bak,filename_origin
-           end
-     end
-end
 
 def make_app_info
   fname = File.join($app_path, 'bin', 'target', 'iOS', $sdk, $configuration, 'app_info.txt')
@@ -500,21 +467,23 @@ def prepare_production_ipa (app_path, app_name)
   return ipa_file_path
 end
 
-def copy_all_png_from_icon_folder_to_product(app_path)
-   rm_rf File.join(app_path, "*.png")
 
-   app_icon_folder = File.join($app_path, 'resources', 'ios')
-   if File.exists? app_icon_folder
-       # NEW resources
-       Dir.glob(File.join(app_icon_folder, "icon*.png")).each do |icon_file|
-         cp icon_file, app_path
-       end
-   else
-       app_icon_folder = File.join($app_path, 'icon')
-       Dir.glob(File.join(app_icon_folder, "*.png")).each do |icon_file|
-         cp icon_file, app_path
-       end
-   end
+#TODO: support assets !
+def copy_all_png_from_icon_folder_to_product(app_path)
+#   rm_rf File.join(app_path, "*.png")
+#
+#   app_icon_folder = File.join($app_path, 'resources', 'ios')
+#   if File.exists? app_icon_folder
+#       # NEW resources
+#       Dir.glob(File.join(app_icon_folder, "icon*.png")).each do |icon_file|
+#         cp icon_file, app_path
+#       end
+#   else
+#       app_icon_folder = File.join($app_path, 'icon')
+#       Dir.glob(File.join(app_icon_folder, "*.png")).each do |icon_file|
+#         cp icon_file, app_path
+#       end
+#   end
 end
 
 def prepare_production_plist (app_path, app_name)
@@ -548,55 +517,53 @@ def prepare_production_plist (app_path, app_name)
     fAlx.close()
 end
 
-ICONS = [['icon152','icon152'], ['icon76','icon76'], ['icon60','icon60'], ['icon120','icon120'], ['icon144','icon144'], ['icon57','icon57'], ['icon72','icon72'], ['icon114','icon114'], ['icon180', 'icon180']]
 
-def copy_all_icons_to_production_folder
-  ICONS.each do |pair|
+ICONS = [
+'icon20.png',
+'icon29.png',
+'icon40.png',
+'icon50.png',
+'icon57.png',
+'icon58.png',
+'icon60.png',
+'icon72.png',
+'icon76.png',
+'icon80.png',
+'icon87.png',
+'icon100.png',
+'icon114.png',
+'icon120.png',
+'icon144.png',
+'icon152.png',
+'icon167.png',
+'icon180.png',
+'icon1024.png']
 
-  end
-end
 
-def restore_app_icon
-  puts "restore icon"
-  #ipath = $config["build"]["iphonepath"]
-  ipath = $app_path + "/project/iphone"
-  ICONS.each do |pair|
-    name = pair[0]
-    ibak = File.join(ipath, name + '.bak')
-    icon = File.join(ipath, name + '.png')
-    next if !File.exists? ibak
-    rm_f icon
-    cp ibak, icon
-    rm_f ibak
-  end
-end
 
-def set_app_icon(make_bak)
+def set_app_icon
   puts "set icon"
   #ipath = $config["build"]["iphonepath"]
-  ipath = $app_path + "/project/iphone"
 
   begin
-    ICONS.each do |pair|
-      name = pair[0]
-      #ibak = File.join(ipath, name + '.bak')
-      icon = File.join(ipath, name + '.png')
-      appicon_old = File.join($app_path, 'icon', pair[1] + '.png')
+    ICONS.each do |icon|
+      name = icon
+      ipath = $app_path + "/project/iphone/Media.xcassets/AppIcon.appiconset"
+      icon = File.join(ipath, name)
+      appicon_old = File.join($app_path, 'icon', name)
       appicon = appicon_old
-      appicon_new = File.join($app_path, 'resources', 'ios', pair[1] + '.png')
-
+      appicon_new = File.join($app_path, 'resources', 'ios', name)
       if File.exists? appicon_new
           appicon = appicon_new
       end
-
-      #if make_bak
-      #   cp icon, ibak unless File.exists? ibak
-      #end
       if File.exists? appicon
+          if File.exists? ipath
+            rm_f ipath
+          end
          cp appicon, ipath
       else
          #puts "WARNING: application should have next icon file : "+ name + '.png !!!'
-         BuildOutput.warning("Can not found next icon file : "+ name + '.png , Use default image !!!' )
+         BuildOutput.warning("Can not found next icon file : "+ name + ' , Use default Rhodes image !!!' )
       end
     end
   rescue => e
@@ -604,37 +571,22 @@ def set_app_icon(make_bak)
   end
 end
 
-LOADINGIMAGES = ['loading', 'loading@2x', 'loading-Portrait', 'loading-Portrait@2x', 'loading-PortraitUpsideDown', 'loading-PortraitUpsideDown@2x', 'loading-Landscape', 'loading-Landscape@2x', 'loading-LandscapeLeft', 'loading-LandscapeLeft@2x', 'loading-LandscapeRight', 'loading-LandscapeRight@2x', 'loading-568h@2x', 'loading-667h@2x', 'loading-736h@3x', 'loading-812h@3x']
 
-LOADINGIMAGES_PLIST = {
-    'Default.png' => {'plist_root' => 'UILaunchImages', 'plist_item' => {'UILaunchImageName' => 'Default', 'UILaunchImageSize' => '{320,480}', 'UILaunchImageOrientation' => 'Portrait', 'UILaunchImageMinimumOSVersion' => '7.0'}},
-    'Default-568h@2x.png' => {'plist_root' => 'UILaunchImages', 'plist_item' => {'UILaunchImageName' => 'Default-568h', 'UILaunchImageSize' => '{320, 568}', 'UILaunchImageOrientation' => 'Portrait', 'UILaunchImageMinimumOSVersion' => '8.0'}},
-    'Default-667h@2x.png' => {'plist_root' => 'UILaunchImages', 'plist_item' => {'UILaunchImageName' => 'Default-667h', 'UILaunchImageSize' => '{375, 667}', 'UILaunchImageOrientation' => 'Portrait', 'UILaunchImageMinimumOSVersion' => '8.0'}},
-    'Default-736h@3x.png' => {'plist_root' => 'UILaunchImages', 'plist_item' => {'UILaunchImageName' => 'Default-736h', 'UILaunchImageSize' => '{414, 736}', 'UILaunchImageOrientation' => 'Portrait', 'UILaunchImageMinimumOSVersion' => '8.0'}},
-    'Default-812h@3x.png' => {'plist_root' => 'UILaunchImages', 'plist_item' => {'UILaunchImageName' => 'Default-812h', 'UILaunchImageSize' => '{375, 812}', 'UILaunchImageOrientation' => 'Portrait', 'UILaunchImageMinimumOSVersion' => '11.0'}},
-    'Default-Portrait.png' => {'plist_root' => 'UILaunchImages~ipad', 'plist_item' => {'UILaunchImageName' => 'Default-Portrait', 'UILaunchImageSize' => '{768, 1024}', 'UILaunchImageOrientation' => 'Portrait', 'UILaunchImageMinimumOSVersion' => '7.0'}},
-    'Default-Landscape.png' => {'plist_root' => 'UILaunchImages~ipad', 'plist_item' => {'UILaunchImageName' => 'Default-Landscape', 'UILaunchImageSize' => '{768, 1024}', 'UILaunchImageOrientation' => 'Landscape', 'UILaunchImageMinimumOSVersion' => '7.0'}},
-    'Default-PortraitUpsideDown.png' => {'plist_root' => 'UILaunchImages~ipad', 'plist_item' => {'UILaunchImageName' => 'Default-PortraitUpsideDown', 'UILaunchImageSize' => '{768, 1024}', 'UILaunchImageOrientation' => 'PortraitUpsideDown', 'UILaunchImageMinimumOSVersion' => '7.0'}},
-    'Default-LandscapeLeft.png' => {'plist_root' => 'UILaunchImages~ipad', 'plist_item' => {'UILaunchImageName' => 'Default-LandscapeLeft', 'UILaunchImageSize' => '{768, 1024}', 'UILaunchImageOrientation' => 'LandscapeLeft', 'UILaunchImageMinimumOSVersion' => '7.0'}},
-    'Default-LandscapeRight.png' => {'plist_root' => 'UILaunchImages~ipad', 'plist_item' => {'UILaunchImageName' => 'Default-LandscapeRight', 'UILaunchImageSize' => '{768, 1024}', 'UILaunchImageOrientation' => 'LandscapeRight', 'UILaunchImageMinimumOSVersion' => '7.0'}},
-}
 
-def restore_default_images
-  puts "restore_default_images"
-  #ipath = $config["build"]["iphonepath"]
-  ipath = $app_path + "/project/iphone"
-  LOADINGIMAGES.each do |name|
-    defname = name.sub('loading', 'Default')
-    ibak = File.join(ipath, defname + '.bak')
-    imag = File.join(ipath, defname + '.png')
-    rm_f imag
-    next if !File.exists? ibak
-    rm_f imag
-    cp ibak, imag
-    rm_f ibak
-  end
-end
-
+LOADINGIMAGES = [
+'Default.png',
+'Default@2x.png',
+'Default-568h@2x.png',
+'Default-667h@2x.png',
+'Default-736h@3x.png',
+'Default-812h@3x.png',
+'Default-Portrait.png',
+'Default-Portrait@2x.png',
+'Default-Landscape.png',
+'Default-Landscape@2x.png',
+'Default-Landscape-736h@3x.png',
+'Default-Landscape-812h@3x.png'
+]
 
 def remove_lines_from_xcode_project(array_with_substrings)
     appname = $app_config["name"] ? $app_config["name"] : "rhorunner"
@@ -658,17 +610,16 @@ end
 
 def set_default_images(make_bak, plist_hash)
   puts "set_default_images"
-  #ipath = $config["build"]["iphonepath"]
-  ipath = $app_path + "/project/iphone"
-  existing_loading_images = []
+  ipath = $app_path + "/project/iphone/Media.xcassets/LaunchImage.launchimage"
   begin
     LOADINGIMAGES.each do |name|
-      defname = name.sub('loading', 'Default')
-      #ibak = File.join(ipath, defname + '.bak')
-      imag = File.join(ipath, defname + '.png')
-      appimage = File.join($app_path, 'app', name + '.png')
-      appsimage = File.join($app_path, 'app', name + '.iphone.png')
-      resourcesiamge = File.join($app_path, 'resources', 'ios', defname + '.png')
+      oldname = name.sub('Default', 'loading')
+      imag = File.join(ipath, name)
+
+      appimage = File.join($app_path, 'app', oldname)
+      name_ios_ext = oldname.sub('.png', '.iphone.png')
+      appsimage = File.join($app_path, 'app', name_ios_ext)
+      resourcesiamge = File.join($app_path, 'resources', 'ios', name)
       if File.exists? appsimage
          appimage =  appsimage
       end
@@ -676,45 +627,20 @@ def set_default_images(make_bak, plist_hash)
          appimage =  resourcesiamge
       end
 
-      if File.exists? imag
-        #if make_bak
-        #   cp imag, ibak unless File.exists? ibak
-        #end
-        rm_f imag
-      end
       #bundlei = File.join($srcdir, defname + '.png')
-      #cp appimage, bundlei unless !File.exist? appimage
-      if File.exists? appimage
-         cp appimage, imag
-         existing_loading_images << (defname + '.png')
+      if File.exist? appimage
+          if File.exists? imag
+            rm_f imag
+          end
+        cp appimage, imag
+      else
+          BuildOutput.warning("Can not found next default file : "+ name + ' , Use default Rhodes image !!!' )
       end
     end
   rescue => e
     puts "WARNING!!! Can not change default image: #{e.to_s}"
   end
 
-  # remove missed loading images from project
-
-  images_to_remove = []
-  LOADINGIMAGES.each do |name|
-     if !existing_loading_images.include?(name.sub('loading', 'Default') + '.png')
-        images_to_remove << (name.sub('loading', 'Default') + '.png')
-     end
-  end
-
-  plist_hash['UILaunchImages'] = []
-  plist_hash['UILaunchImages~ipad'] = []
-
-
-  existing_loading_images.each do |img|
-     plist_item = LOADINGIMAGES_PLIST[img]
-     if plist_item != nil
-        plist_hash[plist_item['plist_root']] << plist_item['plist_item']
-     end
-  end
-
-
-  remove_lines_from_xcode_project(images_to_remove)
 end
 
 
@@ -1284,7 +1210,7 @@ namespace "config" do
     #xcode_configuration = ENV['CONFIGURATION']
     #$configuration = xcode_configuration if not xcode_configuration.nil?
 
-    make_project_bakup
+    #make_project_bakup
   end
 end
 
@@ -2222,11 +2148,6 @@ namespace "build" do
     end
 
 
-    #[build:iphone:restore_xcode_project]
-    task :restore_xcode_project => ["config:iphone"] do
-       restore_project_from_bak
-    end
-
     #[build:iphone:setup_xcode_project]
     desc "make/change generated XCode project for build application"
     task :setup_xcode_project => ["config:iphone"] do
@@ -2335,56 +2256,6 @@ namespace "build" do
 
       Rake::Task['build:bundle:prepare_native_generated_files'].invoke
 
-      #iTunesArtwork
-        itunes_artwork_in_project = File.join($app_path, "project","iphone","iTunesArtwork")
-        itunes_artwork_in_project_2 = File.join($app_path, "project","iphone","iTunesArtwork@2x")
-        itunes_artwork = File.join($app_path, "project","iphone","iTunesArtwork")
-
-      itunes_artwork_new = File.join($app_path, "resources","ios","iTunesArtwork.png")
-      if File.exists? itunes_artwork_new
-          itunes_artwork = itunes_artwork_new
-      end
-
-
-      if !$app_config["iphone"].nil?
-        if !$app_config["iphone"]["production"].nil?
-          if !$app_config["iphone"]["production"]["ipa_itunesartwork_image"].nil?
-            art_test_name = $app_config["iphone"]["production"]["ipa_itunesartwork_image"]
-            if File.exists? art_test_name
-              itunes_artwork = art_test_name
-            else
-              art_test_name = File.join($app_path,$app_config["iphone"]["production"]["ipa_itunesartwork_image"])
-              if File.exists? art_test_name
-                itunes_artwork = art_test_name
-              else
-                itunes_artwork = $app_config["iphone"]["production"]["ipa_itunesartwork_image"]
-              end
-            end
-          end
-        end
-      end
-
-      itunes_artwork_2 = itunes_artwork
-      itunes_artwork_2 = itunes_artwork_2.gsub(".png", "@2x.png")
-      if itunes_artwork_2.index('@2x') == nil
-        itunes_artwork_2 = itunes_artwork_2.gsub(".PNG", "@2x.PNG")
-      end
-      if itunes_artwork_2.index('@2x') == nil
-        itunes_artwork_2 = itunes_artwork_2 + '@2x'
-      end
-
-      if itunes_artwork != itunes_artwork_in_project
-        rm_rf itunes_artwork_in_project
-        cp itunes_artwork,itunes_artwork_in_project
-      else
-        BuildOutput.warning("iTunesArtwork (image required for iTunes) not found - use default !!!" )
-      end
-      if (File.exists? itunes_artwork_2) && (itunes_artwork_2 != itunes_artwork_in_project_2)
-        rm_rf itunes_artwork_in_project_2
-        cp itunes_artwork_2,itunes_artwork_in_project_2
-      else
-        BuildOutput.warning("iTunesArtwork@2x (image required for iTunes) not found - use default !!!" )
-      end
 
       rm_rf File.join('project','iphone','toremoved')
       rm_rf File.join('project','iphone','toremovef')
@@ -2596,6 +2467,7 @@ namespace "run" do
     task :spec => ["clean:iphone"] do
     #task :spec do
       is_timeout = false
+      is_correct_stop = false
       Jake.decorate_spec do
           Rake::Task['run:buildsim'].invoke
 
@@ -2636,9 +2508,12 @@ namespace "run" do
             sleep(1)
           end
 
-          timeout_in_seconds = 60*60
+          timeout_in_seconds = 30*60
 
           log_lines = []
+          last_spec_line = ""
+          last_spec_iseq_line = ""
+
 
           start_logging = Time.now
 
@@ -2657,14 +2532,25 @@ namespace "run" do
                 # FIXME: Workaround to avoid endless loop in the case of System.exit
                 # seg. fault: (SEGV received in SEGV handler)
                 # Looking at log end marker from mspec runner
-                $iphone_end_spec = true if line =~ /MSpec runner stopped/
+                is_mspec_stop = line =~ /MSpec runner stopped/
+                is_terminated = line =~ /\| \*\*\*Terminated\s+(.*)/
+
+                is_correct_stop = true if is_mspec_stop || is_terminated
+
+                $iphone_end_spec = true if is_mspec_stop
+
+
+                last_spec_line = line if line =~ /_spec/
+                last_spec_iseq_line = line if line =~ /_spec.iseq/
 
                 #check for timeout
                 if (Time.now.to_i - start_logging.to_i) > timeout_in_seconds
                     $iphone_end_spec = true
                     is_timeout = true
                 end
-
+                if $iphone_end_spec
+                    puts "%%% stop spec by this line : ["+line.to_s+"]"
+                end
                 break if $iphone_end_spec
               end
               sleep(3) unless $iphone_end_spec
@@ -2673,10 +2559,14 @@ namespace "run" do
 
           puts "Processing spec results ..."
           Jake.process_spec_results(start)
-          if is_timeout
+          if is_timeout || !is_correct_stop
+              puts "Tests has issues : is_timeout["+is_timeout.to_s+"], timeout["+timeout_in_seconds.to_s+" sec], not_correct_terminated_line["+(!is_correct_stop).to_s+"] !"
               puts "Tests stoped by timeout ( "+timeout_in_seconds.to_s+" sec ) !"
-              puts "This is last 64 lines from log :"
-              idx = log_lines.size-64
+              puts "last_spec_line = ["+last_spec_line.to_s+"]"
+              puts "last_spec_iseq_line = ["+last_spec_iseq_line.to_s+"]"
+              puts "last spec executed = ["+$latest_test_line.to_s+"]"
+              puts "This is last 1024 lines from log :"
+              idx = log_lines.size-1024
               if idx < 0
                   idx = 0
               end
@@ -2694,6 +2584,7 @@ namespace "run" do
       unless $dont_exit_on_failure
         exit 1 if is_timeout
         exit 1 if $total.to_i==0
+        exit 1 if !is_correct_stop
         exit $failed.to_i
       end
     end
